@@ -1,3 +1,6 @@
 %:
-	nasm -f elf64 $@_start.asm
-	ld -o $@ $@_start.o
+	nasm -g -f elf64 $@_start.asm
+	ld $@_start.o
+
+clean:
+	rm *.o
