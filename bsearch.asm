@@ -1,62 +1,76 @@
-section .data
-list: dd 1, 3, 5, 7, 10, 12
-size: dd 6
-find: dd 7
+%include "memcmp.asm"
 
-section .text
-global _start
-
-_start:
+bsearch:
+	; rdi - void *l
+	; rsi - void *find
+	; rdx - int nmemb
+	; rcx - int size
+	push rbp
 	mov rbp, rsp
-	; 8 bytes, 2 dword values
-	sub rsp, 8
 
-	; hi = size
-	mov eax, [size]
-	mov [rbp - 4], eax
+	; 12 bytes (3 * 32bit)
+	sub rsp, 0xc
 
 	; lo = 0
-	mov DWORD [rbp - 8], 0
+	mov DWORD [rbp - 4], 0
 
-_loop_start:
+	; hi = size
+	mov [rbp - 8], edx
+
+	; [rbp - 0xc] = mid
+	; not used yet
+
+_bsearch_loop:
+	; while(lo <= hi)
 	mov eax, [rbp - 4]
 	cmp eax, [rbp - 8]
-	jl _return
+	jg _bsearch_fail
 
 	; mid = (lo + hi) / 2
-	add eax, [rbp - 8]
+	mov eax, [rbp - 8]
+	add eax, [rbp - 4]
 	xor edx, edx
 	mov ebx, 2
 	div ebx
 
-	; cmp mid, find
-	mov ebx, [find]
-	cmp [list + eax * 4], ebx
+	; mid = eax
+	mov [rbp - 0xc], eax
 
-	je _if_eq
-	jl _if_greater
+	; save rdi and rdx
+	push rdi
+	push rdx
+	mul rcx
+	lea rdi, [rdi + rax]
+	mov rdx, rcx
+	call memcmp
 
-_if_lower:
-	; hi = mid - 1
-	dec eax
-	mov [rbp - 4], eax
-	jmp _loop_start
+	; get the saved registers
+	pop rdx
+	pop rdi
 
-_if_greater:
+	; cmp l[mid], find
+	cmp rax, 0
+	mov eax, [rbp - 0xc]
+	je _bsearch_end
+	jg _bsearch_greater
+
+_bsearch_lower:
 	; lo = mid + 1
-	inc eax
+	inc rax
+	mov [rbp - 4], eax
+	jmp _bsearch_loop
+
+_bsearch_greater:
+	; hi = mid - 1
+	dec rax
 	mov [rbp - 8], eax
-	jmp _loop_start
+	jmp _bsearch_loop
 
-_if_eq:
-	; exit(mid)
-	mov ebx, eax
-	mov eax, 1
-	int 0x80
+_bsearch_fail:
+	mov rax, -0x1
 
-_return:
-	; cannot find the value
-	; exit(size)
-	mov eax, 1
-	mov ebx, [size]
-	int 0x80
+_bsearch_end:
+	; eax = mid
+	add rsp, 0xc
+	pop rbp
+	ret
