@@ -4,7 +4,7 @@ section .data
 list_a: db 1, 2, 4, 4, 6
 list_b: db 1, 2, 3, 4, 5
 list_c: db 1, 2, 3, 3, 4
-size: dw 4
+size: dq 5
 
 section .text
 global _start
@@ -63,7 +63,7 @@ _start:
 	; smaller
 	mov rdi, list_c
 	mov rsi, list_b
-	mov edx, [size]
+	mov rdx, [size]
 	call memcmp
 	call print_res
 

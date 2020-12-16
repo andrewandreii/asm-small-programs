@@ -1,45 +1,39 @@
-; memcmp(void *a, void *b, int size);
+; memcmp(void *a, void *b, int size) -> rax
 ; - uses rcx (saves to the stack)
-; - returns rax {-1, 0, 1}
+; - returns rax (-1, 0, 1)
 ; - doesnt use stack for local variables
 
 memcmp:
 	; rdi - void *a
 	; rsi - void *b
 	; rdx - int size
-	; rcx - loop counter
 	; rax - return
+	; rcx - counter
+	push rbp
+	mov rbp, rsp
 	push rcx
 
-	; loop_counter = 0
 	xor rcx, rcx
 
-_memcmp_start:
-	; while loop_counter <= size
+_memcmp_loop:
 	cmp rcx, rdx
 
-	; exit while
-	jg _memcmp_equal
+	je _memcmp_equal
 
-	; cmp a[loop_counter], b[loop_counter]
-	mov al, [rsi + rcx]
-	cmp BYTE [rdi + rcx], al
+	mov al, [rdi + rcx]
+	cmp al, [rsi + rcx]
 
-	jg _memcmp_greater
 	jl _memcmp_lower
+	jg _memcmp_greater
 
-	; ++ loop_counter;
 	inc rcx
-
-	jmp _memcmp_start
+	jmp _memcmp_loop
 
 _memcmp_lower:
-	; return = -1
-	mov rax, -1
+	mov rax, -0x1
 	jmp _memcmp_end
 
 _memcmp_greater:
-	; return = 1
 	mov rax, 1
 	jmp _memcmp_end
 
@@ -48,4 +42,5 @@ _memcmp_equal:
 
 _memcmp_end:
 	pop rcx
+	pop rbp
 	ret
